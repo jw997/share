@@ -7,10 +7,10 @@ const {
 } = require('@jscad/modeling').primitives
 const {
   colorize,
-  colorNameToRgb,
+  colorNameToRgb, 
   hexToRgb
 } = require('@jscad/modeling').colors
-const {
+const {  
   cylinder
 } = jscad.primitives
 const {
@@ -29,7 +29,8 @@ const {
   translateZ,
   mirrorZ,
   mirrorY,
-  mirrorX
+  mirrorX,
+  rotateZ
 } = jscad.transforms
 
 // material colors
@@ -53,10 +54,38 @@ function foundationside() {
   )
 }
 
-function foundation() {
-  return foundationside().concat(
+function foundation(params) {
+  let found = foundationside().concat(
     translateY(143 + 6, mirrorY(foundationside())))
+  found = translateZ(-7.25, found)
+  return found
+
 }
+
+function twoby8(len,vert) {
+   // makes a vert or horiz 2x8  at origin
+   
+   if (vert)
+      block =  colorize(wood,cuboid({size:[1.5,7.25,len]}))
+   else 
+      block =  colorize(wood,cuboid({size:[len,1.5,7.25]}))
+   return colorize(wood, block)
+}
+
+function subfloor(params) {
+  bandjoist = translateX(178/2,translateZ(-4.75,twoby8(178)))
+  bandjoist2 = translateY(148,bandjoist)
+  
+  joist = translateY(148/2,
+          translateZ(-4.75,
+          rotateZ(Math.PI/2,twoby8(148))))
+          
+  // copy joists 
+  
+  otherjoists = copyN(joist,12,[16,0,0])
+  return [bandjoist,bandjoist2,joist].concat(otherjoists)
+}
+
 
 // return array of obj
 function copyN(obj, N, translateVec) {
@@ -74,7 +103,7 @@ function copyN(obj, N, translateVec) {
 
 }
 
-function wallhalf() {
+function wallhalf(params) {
   var retval = []
 
   /*
@@ -115,16 +144,20 @@ function wallhalf() {
   topplate.color = wood
   // .translate([0, 0, 84]).setColor(css2rgb('red'))
 
-  retval = [soleplate, topplate, sheathing]
+  retval = [soleplate, topplate]
   retval.push(studs)
+  
+  if (params.plywood) {
+    retval.push(sheathing)
+  }
 
   return retval
 
 }
 
-function wall() {
+function wall(params) {
 
-  let w1 = wallhalf()
+  let w1 = wallhalf(params)
 
   let w2 = translateY(143 + 6, mirrorY(w1))
 
@@ -132,12 +165,16 @@ function wall() {
 
 }
 
-function shed() {
+function shed(params) {
 
   /*
   foundation
   */
-  let f = foundation()
+  let f = foundation(params)
+
+  /* subfloor */
+  let sf = subfloor(params)
+  
 
   /*
        floor
@@ -151,7 +188,7 @@ function shed() {
        walls
        */
 
-  let w = wall()
+  let w = wall(params)
 
   /*
   ridge beam
@@ -162,6 +199,8 @@ function shed() {
     center: [178 / 2, 72 + 4 / 2, 108 + 6 / 2]
   })
   ridge.color = wood
+  console.log("ridge")
+  console.log(ridge)
   //.translate([0, 72, 108]).setColor(css2rgb('green'))
 
   /*
@@ -184,17 +223,59 @@ function shed() {
 
   ]
   posts = colorize(wood, posts)
-
-  let retval = [f, floor, ridge].concat(posts).concat(w)
-
+  
+ // let retval = [f, floor, ridge].concat(posts).concat(w)
+  let retval=[]
+  
+  if (params.roof)
+    retval=[ridge].concat(posts)
+  
+  if (params.floor && params.plywood) {
+    retval.push(floor)
+  }
+  
+  if (params.foundation) {
+    retval = retval.concat(f)
+  }
+  
+  retval = retval.concat(sf)
+      
+  if (params.walls) {
+    console.log("adding walls")
+    retval = retval.concat(w)
+  }
+  
+  
+     
   return retval
 
 }
 
-function main() {
-  return shed()
+const getParameterDefinitions = () => {
+  // UG... only integer steps can be performed reliably
+  console.log("Called getParamDef")
+
+  return [
+   { name: 'Parts', type: 'group', caption: 'Parts' },
+  { name: 'foundation', type: 'checkbox', checked: true,  caption: 'foundation:' },
+ 
+  { name: 'floor',      type: 'checkbox', checked: true,  caption: 'floor:' },
+
+   { name: 'walls',      type: 'checkbox', checked: true,  caption: 'walls:' },
+     { name: 'roof',      type: 'checkbox', checked: true,  caption: 'roof:' },
+   
+     { name: 'group2', type: 'group', caption: 'Materials' },
+       { name: 'plywood', type: 'checkbox', checked: true,  caption: 'plywood:' },
+ 
+  { name: 'wood', type: 'checkbox', checked: true,  caption: 'dimensional:' },
+   
+     
+     ]
 }
 
-module.exports = {
-  main
+function main(params) {
+   console.log(params)
+  return shed(params)
 }
+
+module.exports = { main, getParameterDefinitions }
