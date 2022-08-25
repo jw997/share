@@ -28,6 +28,7 @@ const {
   translateX,
   translateY,
   translateZ,
+  mirror,
   mirrorZ,
   mirrorY,
   mirrorX,
@@ -45,6 +46,29 @@ let rockbody = colorNameToRgb('darkgrey')
 let rockface = colorNameToRgb('lightgrey')
 let foam = colorNameToRgb('blue')
 let sheetmetal = colorNameToRgb('silver')
+
+// ***********************************
+// Trailer dimensions from plans
+// ***********************************
+ let A = 168 // length of rectangle box 14 feet
+
+  let B = 158 // length insdie of box
+  let C = 69 // dist from front of box to wheel well
+  let D = 36 // length of wheel well
+  let E = 63 // dist from back of well to end of box
+  // A = C + D+ E
+  let boxOuterWidth = 96
+  let boxInnerWidth = 80
+
+  let wellOuterWidth = 96
+  let wellInnerWidth = 84
+  
+  let boxHeight = 6
+  let wellHeight = 8.5
+  
+// ***********************************
+// Utility Functions
+// ***********************************
 
 // elementwise diff of arrays to compute size for cuboid
 function diff(a1, a2) {
@@ -132,6 +156,197 @@ function axes() {
   return [xa, ya, za]
 }
 
+// make a sheet with a good side
+// spec has properties from, to, color
+/*  {
+      from: [0, 0, 0],
+      to: [96, 48, 0.75],
+      color: plywood
+    }
+    */
+function sheet(spec,cutout) {
+  s1 = arrtoitems([spec])
+  
+  if (cutout === undefined) return s1[0]
+  s2 = arrtoitems([cutout])
+  return colorize(spec.color, subtract(s1[0],s2[0]))
+}
+
+function drywall() {
+
+  let half = 0.5
+  let dims = [8 * 12, 4 * 12, 0.4]
+
+  let body = colorize(rockbody, cuboid({
+    size: dims,
+    center: scale(half, dims)
+  }))
+  dims = [8 * 12, 4 * 12, 0.1]
+  let face = translateZ(0.4, colorize(rockface, cuboid({
+    size: dims,
+    center: scale(half, dims)
+  })))
+  return [body, face]
+}
+
+// a 2x4 stud 
+// 1.5 for on top of plate
+// 93 for full height
+// 16 for 2nd from end
+// flat for california corner on inside
+function studspec(xloc,rot=0,flat=false,base=1.5,height=92.25,width=1.5,side=3.5) {
+  let retval = {}
+ /* if (ywall ) {
+    retval.from = [0,xloc,base]
+    retval.to = [side, xloc+width,base+height]
+    if (flat) {
+       retval.from = [side-width,xloc,base]
+       retval.to = [side,xloc+side,base+height]
+    }
+  } else {*/
+    retval.from = [xloc,0,base]
+    retval.to = [xloc+width-.06,side,base+height]
+    
+    if (flat) {
+       retval.from = [xloc,side-width,base]
+       retval.to = [xloc+side-.06,side-.06,base+height]
+    
+    }
+
+    
+    
+  //}
+  retval.color = wood
+  return retval
+}
+// plates and headers and blocks
+// a 2x4 stud 
+// 1.5 for on top of plate
+// 93 for full height
+// 16 for 2nd from end
+// flat for california corner on inside
+function platespec(loc,length,height,width=1.5,side=3.5) {
+  let retval = {}
+
+  retval.from = [loc,0,height]
+  retval.to = [loc+length,side,width+height-0.125]
+  
+  retval.color = wood
+  return retval
+}
+// lay out framing
+// bottom plate
+// top plate?
+// vertical stud positions
+// header positions and sizes?
+//  0, 1.5F, 5,40.5, 42, 46.75 x3, 61.5,77.5,91F, 94.5
+function studwall() {
+
+  // plates
+  
+  let xs = [0, /*1.5F,*//* trimmer 5,40.5,*/ 42, /*46.75 x3*/ 61.5,77.5,/*91F,*/ 94.5]
+  let specs = []
+  
+  for (let i = 0; i < xs.length; i++) {
+    let sp = studspec(xs[i],true)
+    //console.log("Stud",sp)
+    specs.push(sp)
+  }
+  
+  // flat corner studs
+  xs=[1.5,92.5]
+  for (let i = 0; i < xs.length; i++) {
+    let sp = studspec(xs[i],true,true)
+    //console.log("Stud",sp)
+    specs.push(sp)
+  }
+  // 3x4 stud at 48
+  //48+-1.25
+  
+  let middlepost = studspec(48-1.25,true,false,1.5,93,2.5,side=3.5) 
+  specs.push(middlepost)
+  
+  // door cripple studs 1.5 to 82  at 5,40.5,*
+  
+  specs.push(studspec(5,true,false,1.5,80.5) )
+  specs.push(studspec(40.5,true,false,1.5,80.5) )
+  
+  // trimmer studs above header
+  specs.push(studspec(5,true,false,85.5,6.7) )
+  specs.push(studspec(15,true,false,85.5,6.7) )
+  specs.push(studspec(28,true,false,85.5,6.7) )
+  specs.push(studspec(40.5,true,false,85.5,6.7) )
+  
+  // bottomplate
+  sp = platespec(0,96,0)
+  specs.push(sp)
+  
+  // topplates
+  sp = platespec(0,96,92.25)
+  specs.push(sp)
+  sp = platespec(0,96,93.75)
+  specs.push(sp)
+  
+  
+  // header 
+  //platespec(loc,length,height,width=1.5,side=3.5)
+  specs.push(platespec(5.1, 36.8, 82,width=3.5,side=3.5))
+  
+  //console.log("Specs",specs)
+   // for front side/ back of trailer
+   // return mirror({normal: [-1,1,0]}, arrtoitems(specs))
+  
+  // translte to back wall / front of trailer
+  // and reflect
+  items = arrtoitems(specs)
+//  
+  items = rotateZ(Math.PI/2, items)
+  items = mirrorY(items)
+  items = translateY(96,items)
+  items = translateX(14*12, items)
+ // items = translateX(72,items)
+ // items = mirror({normal: [1,-1,0],origin:[12*14,0,0]}, items)
+  return items
+  
+  // keep for right side?
+  //return arrtoitems(specs)
+}
+
+// ***********************************
+// Building parts
+// ***********************************
+
+function subfloor() {
+
+  let wellWidth = (wellOuterWidth - wellInnerWidth)/2
+  // right rear sheet
+  let rr = {from:[0,0,0],to:[72-.125,48-.125,0.75],color:plywood}
+  let co =  {from:[E ,0 ,0],to:[72,wellWidth ,0.75],color:plywood}
+  
+  srr = sheet(rr,co)
+  
+  // right front sheet
+  let rf = {from:[72,0,0],to:[72+96,48,0.75],color:plywood}
+  co =  {from:[72,0 ,0],to:[E+D+0.125 ,wellWidth+0.125 ,0.75],color:plywood}
+  srf = sheet(rf,co)
+  
+  // left rear sheet
+
+  rr = {from:[0,48,0],to:[72-.125,96,0.75],color:plywood}
+  co =  {from:[E ,96-wellWidth ,0],to:[72,96 ,0.75],color:plywood}
+  
+  slr = sheet(rr,co)
+  
+    
+  // left front sheet
+  let lf = {from:[72,48.125,0],to:[72+96,96,0.75],color:plywood}
+  co =  {from:[72,96-wellWidth-.125 ,0],to:[E+D+.125 ,96 ,0.75],color:plywood}
+  slf = sheet(lf,co)
+  
+  
+  return [srr,srf,slr,slf]
+}
+
 function floorframing() {
   // wood from list of coordinates 
   //  {from:, to:, color:wood},
@@ -161,7 +376,7 @@ function floorframing() {
     color: wood
   };
   // from plans
-  let positions = [0, 16, 30.75, 32.25, 50, 66, 82, 98, 114, 130, 146,
+  let xshifts = [0, 16, 30.75, 32.25, 50, 66, 82, 98, 114, 130, 146,
     156
   ];
 
@@ -171,7 +386,7 @@ function floorframing() {
     to: [14.5, 1.5 + 76.5, 5.5],
     color: foam
   };
-  let foampos = [1.5, 51.5, 67.5, 83.5, 99.5, 115.5, 131.5]
+  let foamxshifts = [1.5, 51.5, 67.5, 83.5, 99.5, 115.5, 131.5]
   // 3 special bays
   // 17.5 to 30.75
   let f2 = {
@@ -192,9 +407,10 @@ function floorframing() {
     color: foam
   };
 
-  arr = arr.concat(xinc(j1, positions));
+  // shift from and to .x by positions
+  arr = arr.concat(xinc(j1, xshifts));
 
-  arr = arr.concat(xinc(f1, foampos));
+  arr = arr.concat(xinc(f1, foamxshifts));
   arr = arr.concat([f2, f3, f4])
   console.log ("floorframing", arr)
   return arrtoitems(arr)
@@ -222,30 +438,12 @@ function tires() {
   let backtire = translateX(-overallradius - 1, tire)
   let fronttire = mirrorX(backtire)
 
-  //let tirelf = translateX(2*(OR+IR+1), tire)
-
-  //let u = translateX(-OR-IR, union(tire,tirelf))
   let u = colorize([0, 0, 0], union(backtire, fronttire))
   return u
 
 }
 
-function drywall() {
 
-  let half = 0.5
-  let dims = [8 * 12, 4 * 12, 0.4]
-
-  let body = colorize(rockbody, cuboid({
-    size: dims,
-    center: scale(half, dims)
-  }))
-  dims = [8 * 12, 4 * 12, 0.1]
-  let face = translateZ(0.4, colorize(rockface, cuboid({
-    size: dims,
-    center: scale(half, dims)
-  })))
-  return [body, face]
-}
 
 function tongue() {
   let c = cuboid({
@@ -263,32 +461,16 @@ function tongue() {
     center: [-25, 0, 0]
   })
   ar = rotateZ(theta, ar)
-
   let retval = colorize([0, 0, 0], union(c, al, ar))
 
   return retval
-
 }
 
+
+
 function trailer() {
-  let A = 168 // length of rectangle box 14 feet
-
-  let B = 158 // length insdie of box
-  let C = 69 // dist from front of box to wheel well
-  let D = 36 // length of wheel well
-  let E = 63 // dist from back of well to end of box
-  // A = C + D+ E
-  let boxOuterWidth = 100
-  let boxInnerWidth = 80
-
-  let wellOuterWidth = 102
-  let wellInnerWidth = 84
-
+ 
   let wellWidth = (wellOuterWidth - wellInnerWidth) / 2
-
-  let boxHeight = 6
-  let wellHeight = 8.5
-
   let wellXCenter = A / 2 - C - D / 2
 
   // well is 36 * 9 * 8.5
@@ -357,12 +539,39 @@ function trailer() {
   return stuff
 }
 
-function main() {
-  let items = floorframing()
+// ***********************************
+// MAIN
+// ***********************************
 
-  return [trailer(), axes()].concat(items)
+function main() {
+  
+  let items = trailer()
+  // trailer leaves origin in inside bottom of back right corner
+  
+  items = items.concat(floorframing())
+  
+  // move everything so origin is on top of trailer in 
+  // back right corner
+  items = translate( [(A-B)/2,
+                      (boxOuterWidth-boxInnerWidth)/2,
+                      -boxHeight] , items)
+                     
+   
+  // plywood subfloor
+  items = items.concat(subfloor())
+  // move origin on top of subfloor
+  items = translateZ( -3/4 , items)
+  
+  // studwall
+  studs = studwall()
+  
+  return [items, studs, axes()]
 }
 
+// ***********************************
+// Exports
+// ***********************************
 module.exports = {
   main
 }
+
