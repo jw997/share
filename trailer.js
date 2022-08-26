@@ -4,7 +4,7 @@ const {
   torus,
   cuboid,
   ellipse,
-  star
+  star 
 } = require('@jscad/modeling').primitives
 const {
   colorize,
@@ -70,47 +70,83 @@ let sheetmetal = colorNameToRgb('silver')
 // Utility Functions
 // ***********************************
 
+function assert(condition, message) {
+    if (!condition) {
+        throw message || "Assertion failed";
+    }
+}
+
 // elementwise diff of arrays to compute size for cuboid
 function diff(a1, a2) {
-  retval = []
+  
+  let retval = []
   for (let i = 0; i < a1.length; i++) {
     retval[i] = Math.abs(a2[i] - a1[i])
   }
   return retval
 }
 
+function sum(a1, a2) {
+  let retval = []
+  for (let i = 0; i < a1.length; i++) {
+    retval[i] = a2[i] + a1[i]
+  }
+  return retval 
+}
+
 // compute center for cuboid
 function avg(a1, a2) {
-  retval = []
+  let retval = []
   for (let i = 0; i < a1.length; i++) {
     retval[i] = (a2[i] + a1[i]) / 2
   }
   return retval
 }
 
+function scale(scaleFactor, array) {
+  console.log("in",array);
+  let retval = array.map((e) => e * scaleFactor)
+  console.log("out",array)
+  return retval;
+}
+
+// abc( [],[],number)
+function abc(a,b,c) {
+
+  assert(a.length == b.length, "input arrays same length")
+  // a + b*c
+  console.log("a",a,"b",b,"c",c)
+  let retval= sum( a,scale(c,b))
+  assert (a.length== retval.length, "output array same length")
+  return [...retval]
+}
+
 // make cuboids out of corner,corner, material data
 // infer top face has 2nd corner, shortest dimension
 // example [{from:[0,0,0], to:[157.5, 1.5 ,5.5], color:wood}]
 function arrtoitems(a) {
-
+  console.log("arrtoitems",a)
   let items = []
 
   for (let i = 0; i < a.length; i++) {
-    f = a[i].from;
-    t = a[i].to;
-    c = a[i].color;
+    console.log("i",i)
+    let f = a[i].from;
+    assert( f.length == 3, "from length")
+    let t = a[i].to;
+    let c = a[i].color;
 
-    sz = diff(f, t);
-    cent = avg(f, t);
+    let sz = diff(f, t);
+    let cent = avg(f, t);
 
-    item = colorize(c, cuboid({
+    let item = colorize(c, cuboid({
       size: sz,
       center: cent
     }))
     console.log(item)
+    assert( item.polygons.length > 0, "real cuboid")
     items.push(item)
   }
-
+ console.log("arrtoitems returning",items)
   return items
 }
 
@@ -165,10 +201,10 @@ function axes() {
     }
     */
 function sheet(spec,cutout) {
-  s1 = arrtoitems([spec])
+  let s1 = arrtoitems([spec])
   
   if (cutout === undefined) return s1[0]
-  s2 = arrtoitems([cutout])
+  let s2 = arrtoitems([cutout])
   return colorize(spec.color, subtract(s1[0],s2[0]))
 }
 
@@ -189,128 +225,148 @@ function drywall() {
   return [body, face]
 }
 
+
+function makespecs( info ) {
+  let retval = []
+  if (info.copies === undefined) {
+    let sp = {from:info.from,
+            to: sum(info.from, info.offset),
+            color: info.material}
+    retval.push(sp)
+  } else {
+    for (let i = 0; i < info.copies.offsets.length; i++) {
+      console.log("loop",i)
+      let k = info.copies.offsets[i]
+      
+      let newfrom = abc(info.from,info.copies.dir,k);
+      
+      assert(newfrom.length === 3,"new from length 3")
+      
+      let newto = sum(newfrom,info.offset)
+      
+      let sp = {from: newfrom  ,
+            to: newto,
+            color: info.material}
+      console.log("spec",sp)
+      assert(sp.from.length==3,"from length 3")
+      retval.push(sp)
+      console.log("retval length",retval.length)
+      console.log("retval ",retval)
+      
+    }
+  
+  }
+  return retval
+}
+
+
+
+//***************************************
+// 
+// WALL SYSTEM 2
+//
+//
+// each board specified by start offset color
+// e.g. plate={start:[0,0,0], offset:[96,3.5,1.5], wood}
+// is a 2x4 plate 3 feet long
+// 
+// in case of identical sized parallel boards
+// make one and copy it along an offset
+// copy(board, offset direction, array of offset values
+// copy(plate, [0,0,1], [93,94.5])
+
+// wall lengths 
+
+
 // a 2x4 stud 
 // 1.5 for on top of plate
 // 93 for full height
 // 16 for 2nd from end
 // flat for california corner on inside
-function studspec(xloc,rot=0,flat=false,base=1.5,height=92.25,width=1.5,side=3.5) {
-  let retval = {}
- /* if (ywall ) {
-    retval.from = [0,xloc,base]
-    retval.to = [side, xloc+width,base+height]
-    if (flat) {
-       retval.from = [side-width,xloc,base]
-       retval.to = [side,xloc+side,base+height]
-    }
-  } else {*/
-    retval.from = [xloc,0,base]
-    retval.to = [xloc+width-.06,side,base+height]
-    
-    if (flat) {
-       retval.from = [xloc,side-width,base]
-       retval.to = [xloc+side-.06,side-.06,base+height]
-    
-    }
 
-    
-    
-  //}
-  retval.color = wood
-  return retval
-}
-// plates and headers and blocks
-// a 2x4 stud 
-// 1.5 for on top of plate
-// 93 for full height
-// 16 for 2nd from end
-// flat for california corner on inside
-function platespec(loc,length,height,width=1.5,side=3.5) {
-  let retval = {}
+// back wall consts
+const B0=92.25
+const B1=96
+const B2=89
+const B3=80.5
+const B4=37
+const B5=6.75
 
-  retval.from = [loc,0,height]
-  retval.to = [loc+length,side,width+height-0.125]
-  
-  retval.color = wood
-  return retval
-}
-// lay out framing
-// bottom plate
-// top plate?
-// vertical stud positions
-// header positions and sizes?
-//  0, 1.5F, 5,40.5, 42, 46.75 x3, 61.5,77.5,91F, 94.5
-function studwall() {
+const TWOBY=1.5
+const THREEBY=2.5
+const FOURBY=3.5
+const SIXBY=5.5
+const EIGHTBY=7.25
 
-  // plates
+const EPS=0.02
+
+function wall() {
+  let width=96
+  let height=98.25
   
-  let xs = [0, /*1.5F,*//* trimmer 5,40.5,*/ 42, /*46.75 x3*/ 61.5,77.5,/*91F,*/ 94.5]
-  let specs = []
-  
-  for (let i = 0; i < xs.length; i++) {
-    let sp = studspec(xs[i],true)
-    //console.log("Stud",sp)
-    specs.push(sp)
+  let B0info = 
+  {from:[A,0,TWOBY],
+   offset:[-FOURBY,TWOBY-EPS,B0-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[0,16,31,52.5,94.5]}
   }
   
-  // flat corner studs
-  xs=[1.5,92.5]
-  for (let i = 0; i < xs.length; i++) {
-    let sp = studspec(xs[i],true,true)
-    //console.log("Stud",sp)
-    specs.push(sp)
+  let B1info = 
+  {from:[A,0,0],
+   offset:[-FOURBY,B1,TWOBY-EPS],material:wood,
+   copies:{dir:[0,0,1],offsets:[0,B0]}
   }
-  // 3x4 stud at 48
-  //48+-1.25
   
-  let middlepost = studspec(48-1.25,true,false,1.5,93,2.5,side=3.5) 
-  specs.push(middlepost)
+  let B2info = 
+  {from:[A,FOURBY,TWOBY+B0],
+   offset:[-FOURBY,B2,TWOBY-EPS],material:wood,
+   copies:{dir:[0,0,1],offsets:[0,TWOBY]}
+  }
   
-  // door cripple studs 1.5 to 82  at 5,40.5,*
+  let B3info = 
+  {from:[A,54,TWOBY],
+   offset:[-FOURBY,TWOBY-EPS,B3-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[0,34+TWOBY]}
+  }
   
-  specs.push(studspec(5,true,false,1.5,80.5) )
-  specs.push(studspec(40.5,true,false,1.5,80.5) )
+  let B4info = 
+  {from:[A,54,TWOBY+B3],
+   offset:[-FOURBY,B4-EPS,FOURBY-EPS],material:wood
+   
+  }
   
-  // trimmer studs above header
-  specs.push(studspec(5,true,false,85.5,6.7) )
-  specs.push(studspec(15,true,false,85.5,6.7) )
-  specs.push(studspec(28,true,false,85.5,6.7) )
-  specs.push(studspec(40.5,true,false,85.5,6.7) )
+  let B5info = 
+  {from:[A,54,TWOBY+B3+FOURBY],
+   offset:[-FOURBY,TWOBY,B5-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[EPS,11,23,34+TWOBY-EPS]}
+  }
   
-  // bottomplate
-  sp = platespec(0,96,0)
-  specs.push(sp)
+  let CCinfo = 
+  {from:[A-(FOURBY-TWOBY),0,TWOBY],
+   offset:[-TWOBY,FOURBY-EPS,B0],material:wood,
+   copies:{dir:[0,1,0],offsets:[TWOBY+EPS,width-TWOBY-FOURBY]}
+  }
   
-  // topplates
-  sp = platespec(0,96,92.25)
-  specs.push(sp)
-  sp = platespec(0,96,93.75)
-  specs.push(sp)
+  let ThreeByFourinfo = 
+  {from:[A,46.75,TWOBY+EPS],
+   offset:[-FOURBY,THREEBY,B0-2*EPS],material:wood
   
+  }
   
-  // header 
-  //platespec(loc,length,height,width=1.5,side=3.5)
-  specs.push(platespec(5.1, 36.8, 82,width=3.5,side=3.5))
-  
-  //console.log("Specs",specs)
-   // for front side/ back of trailer
-   // return mirror({normal: [-1,1,0]}, arrtoitems(specs))
-  
-  // translte to back wall / front of trailer
-  // and reflect
-  items = arrtoitems(specs)
-//  
-  items = rotateZ(Math.PI/2, items)
-  items = mirrorY(items)
-  items = translateY(96,items)
-  items = translateX(14*12, items)
- // items = translateX(72,items)
- // items = mirror({normal: [1,-1,0],origin:[12*14,0,0]}, items)
+ 
+  let items = arrtoitems(makespecs(B0info))
+  .concat(arrtoitems(makespecs(B1info)))
+  .concat(arrtoitems(makespecs(B2info)))
+  .concat(arrtoitems(makespecs(B3info)))
+  .concat(arrtoitems(makespecs(B4info)))
+  .concat(arrtoitems(makespecs(B5info)))
+  .concat(arrtoitems(makespecs(CCinfo)))
+  .concat(arrtoitems(makespecs(ThreeByFourinfo)))
   return items
   
-  // keep for right side?
-  //return arrtoitems(specs)
 }
+
+
+
 
 // ***********************************
 // Building parts
@@ -416,10 +472,7 @@ function floorframing() {
   return arrtoitems(arr)
 }
 
-function scale(scaleFactor, array) {
-  retval = array.map((e) => e * scaleFactor)
-  return retval;
-}
+
 
 function tires() {
 
@@ -563,7 +616,9 @@ function main() {
   items = translateZ( -3/4 , items)
   
   // studwall
-  studs = studwall()
+ // studs = studwall()
+  studs=wall()
+  console.log("Studs",studs)
   
   return [items, studs, axes()]
 }
@@ -575,3 +630,125 @@ module.exports = {
   main
 }
 
+
+//******************************
+// UNUSED GARBAGE
+// *****************************
+
+function studspec(xloc,rot=0,flat=false,base=1.5,height=92.25,width=1.5,side=3.5) {
+  let retval = {}
+ /* if (ywall ) {
+    retval.from = [0,xloc,base]
+    retval.to = [side, xloc+width,base+height]
+    if (flat) {
+       retval.from = [side-width,xloc,base]
+       retval.to = [side,xloc+side,base+height]
+    }
+  } else {*/
+    retval.from = [xloc,0,base]
+    retval.to = [xloc+width-.06,side,base+height]
+    
+    if (flat) {
+       retval.from = [xloc,side-width,base]
+       retval.to = [xloc+side-.06,side-.06,base+height]
+    
+    }
+
+    
+    
+  //}
+  retval.color = wood
+  return retval
+}
+// plates and headers and blocks
+// a 2x4 stud 
+// 1.5 for on top of plate
+// 93 for full height
+// 16 for 2nd from end
+// flat for california corner on inside
+function platespec(loc,length,height,width=1.5,side=3.5) {
+  let retval = {}
+
+  retval.from = [loc,0,height]
+  retval.to = [loc+length,side,width+height-0.125]
+  
+  retval.color = wood
+  return retval
+}
+// lay out framing
+// bottom plate
+// top plate?
+// vertical stud positions
+// header positions and sizes?
+//  0, 1.5F, 5,40.5, 42, 46.75 x3, 61.5,77.5,91F, 94.5
+function studwall() {
+
+  // plates
+  
+  let xs = [0, /*1.5F,*//* trimmer 5,40.5,*/ 42, /*46.75 x3*/ 61.5,77.5,/*91F,*/ 94.5]
+  let specs = []
+  
+  for (let i = 0; i < xs.length; i++) {
+    let sp = studspec(xs[i],true)
+    //console.log("Stud",sp)
+    specs.push(sp)
+  }
+  
+  // flat corner studs
+  xs=[1.5,92.5]
+  for (let i = 0; i < xs.length; i++) {
+    let sp = studspec(xs[i],true,true)
+    //console.log("Stud",sp)
+    specs.push(sp)
+  }
+  // 3x4 stud at 48
+  //48+-1.25
+  
+  let middlepost = studspec(48-1.25,true,false,1.5,93,2.5,side=3.5) 
+  specs.push(middlepost)
+  
+  // door cripple studs 1.5 to 82  at 5,40.5,*
+  
+  specs.push(studspec(5,true,false,1.5,80.5) )
+  specs.push(studspec(40.5,true,false,1.5,80.5) )
+  
+  // trimmer studs above header
+  specs.push(studspec(5,true,false,85.5,6.7) )
+  specs.push(studspec(15,true,false,85.5,6.7) )
+  specs.push(studspec(28,true,false,85.5,6.7) )
+  specs.push(studspec(40.5,true,false,85.5,6.7) )
+  
+  // bottomplate
+  sp = platespec(0,96,0)
+  specs.push(sp)
+  
+  // topplates
+  sp = platespec(0,96,92.25)
+  specs.push(sp)
+  sp = platespec(0,96,93.75)
+  specs.push(sp)
+  
+  
+  // header 
+  //platespec(loc,length,height,width=1.5,side=3.5)
+  specs.push(platespec(5.1, 36.8, 82,width=3.5,side=3.5))
+  
+  //console.log("Specs",specs)
+   // for front side/ back of trailer
+   // return mirror({normal: [-1,1,0]}, arrtoitems(specs))
+  
+  // translte to back wall / front of trailer
+  // and reflect
+  items = arrtoitems(specs)
+//  
+  items = rotateZ(Math.PI/2, items)
+  items = mirrorY(items)
+  items = translateY(96,items)
+  items = translateX(14*12, items)
+ // items = translateX(72,items)
+ // items = mirror({normal: [1,-1,0],origin:[12*14,0,0]}, items)
+  return items
+  
+  // keep for right side?
+  //return arrtoitems(specs)
+}
