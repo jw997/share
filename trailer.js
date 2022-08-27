@@ -1,6 +1,10 @@
 const jscad = require('@jscad/modeling')
 
-const {
+const { extrudeLinear } = require('@jscad/modeling').extrusions
+
+const { poly2 } = require('@jscad/modeling').geometries
+
+const { 
   torus,
   cuboid,
 } = require('@jscad/modeling').primitives
@@ -45,7 +49,7 @@ const FOURBY=3.5
 const SIXBY=5.5
 const EIGHTBY=7.25
 
-const EPS=0.02
+const EPS=0.05
 
 // ***********************************
 // Trailer dimensions from plans
@@ -54,8 +58,8 @@ const EPS=0.02
 
   let B = 158 // length insdie of box
   let C = 69 // dist from front of box to wheel well
-  let D = 36 // length of wheel well
-  let E = 63 // dist from back of well to end of box
+  let D = 63 // length of wheel well
+  let E = 36 // dist from back of well to end of box
   // A = C + D+ E
   let boxOuterWidth = 96
   let boxInnerWidth = 80
@@ -174,7 +178,7 @@ function xinc(init, xs) {
 }
 // draw big visibile axes on picture
 function axes() {
-  let long = 24
+  let long = 168-39
   let short = 2
   let xa = colorize([100, 0, 0], cuboid({
     size: [long, short, short],
@@ -270,7 +274,265 @@ function makespecs( info ) {
 // copy(board, offset direction, array of offset values
 // copy(plate, [0,0,1], [93,94.5])
 
-// wall lengths 
+// wall lengths
+
+// Right Wall consts
+const R0= 92.25
+const R1 = 65
+const R2 = 67
+const R3 = 32
+const R4 = 6.5
+const R5 = 161 
+const R6 = 37.25
+const R7 = 123.75 // TODO TOO LONG  127.25 by FOURBY
+const R8 = 168
+const R9 = 84.25
+
+
+
+function rightwall() {
+
+  let width=14*12
+  let height=105.5
+  
+  let R0info = 
+  {from:[FOURBY,0,TWOBY],
+   offset:[TWOBY-EPS,FOURBY,R0-EPS],material:wood,
+   copies:{dir:[1,0,0],
+   offsets:[0,15,29,97.5,107,122.25,127.25,width-2*FOURBY-TWOBY-EPS]}
+  }
+  
+  
+  let Misc341info = 
+  {from:[FOURBY,0,TWOBY],
+   offset:[THREEBY-EPS,FOURBY,R0-EPS],material:wood,
+   copies:{dir:[1,0,0],
+   offsets:[139.25]}
+  }
+  
+  let R9info = 
+  {from:[FOURBY,0,TWOBY+R4+TWOBY],
+   offset:[TWOBY-EPS,FOURBY,R9-EPS],material:wood,
+   copies:{dir:[1,0,0],
+   offsets:[60.5,76.5]}
+  }
+  
+  let R9info34 = 
+  {from:[FOURBY,0,TWOBY+R4+TWOBY],
+   offset:[THREEBY-EPS,FOURBY,R9-EPS],material:wood,
+   copies:{dir:[1,0,0],
+   offsets:[43.25,91.25]}
+  }
+  
+ 
+  let R4info = 
+  {from:[FOURBY,0,TWOBY],
+   offset:[TWOBY,FOURBY,R4-EPS],material:wood,
+   copies:{dir:[1,0,0],
+           offsets:[29+TWOBY,97.5-TWOBY]}
+  }
+  
+ 
+  // plates
+  let R1info = 
+  {from:[FOURBY+97.5-TWOBY,0,0],
+   offset:[R1,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+  
+  let R2info = 
+   {from:[FOURBY+29+TWOBY,0,R4+TWOBY],
+   offset:[R2,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+  
+  let R3info = 
+ {from:[FOURBY,0,0],
+   offset:[R3,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+  
+
+  // header
+  let R5info = 
+  {from:[FOURBY,0, TWOBY+R0],
+   offset:[R5,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+    // door cripples
+  let R6info = 
+   {from:[FOURBY+R7+FOURBY,0, TWOBY+R0+TWOBY],
+   offset:[R6-EPS,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+  
+  
+  let R7info = 
+   {from:[FOURBY,0, TWOBY+R0+TWOBY],
+   offset:[R7-EPS,FOURBY,TWOBY-EPS],material:wood,
+  
+  }
+  
+  
+
+  let R8info = 
+  {from:[0,0,0],
+   offset:[R8,FOURBY,TWOBY-EPS],material:wood
+  }
+  
+  
+  let CCinfo = 
+  {from:[FOURBY + 122.25 + TWOBY,FOURBY-TWOBY,TWOBY],
+   offset:[FOURBY-EPS,TWOBY-EPS,R0],material:wood,
+  }
+
+  let specs = [].concat(
+  makespecs(R0info),
+  makespecs(Misc341info),
+  makespecs(R1info),
+  makespecs(R2info),
+  makespecs(R3info),
+  makespecs(R4info),
+  makespecs(R5info),
+  makespecs(R6info),
+  makespecs(R7info),
+
+  makespecs(R9info),
+  makespecs(R9info34),
+
+  makespecs(CCinfo),
+  
+  )
+  let items = arrtoitems(specs)
+  
+  // make triangle pieces
+  
+  let Radspec1 = {from:[0,0, 0],
+   offset:[164.5,TWOBY,EIGHTBY],material:wood,
+  }
+  let baseitem = arrtoitems(makespecs(Radspec1))
+  
+  let otheritem = arrtoitems(makespecs(Radspec1))
+  
+  let theta = Math.atan(EIGHTBY / 164.5)
+  
+  otheritem = rotateY(-theta,baseitem)
+  raditem = subtract(baseitem,otheritem)
+  raditem = translateX(-164.5/2,raditem)
+  raditem =  rotateZ(Math.PI,raditem)
+  raditem = translateY(TWOBY,raditem)
+  raditem = translateX(164.5/2+FOURBY, raditem)
+  raditem = translateZ(R0+3*TWOBY, raditem)
+  
+  // copy 
+  raditem2 = translateY(TWOBY,raditem)
+  
+  // tilt R8 and lift it up
+  let r8item = arrtoitems(makespecs(R8info))
+  r8item = rotateY(theta,r8item)
+  r8item = translateZ(R0+3*TWOBY+EIGHTBY, r8item)
+  
+  items.push(r8item)
+ 
+  items.push(raditem)
+  items.push(raditem2)
+
+  return items
+
+
+}
+
+// left wall 
+function leftwall() {
+
+  let width=14*12
+  let height=105.5
+  
+  let items=rightwall()
+  items = translateY(8*12,mirrorY(items))
+  
+  let wellback = FOURBY+R3-TWOBY
+  // header length 
+  let hlen = 24+TWOBY+TWOBY
+  let sillheight=42
+  let windowoffset = R2-hlen
+  let windowwidth=24
+  let windowheight=36
+  // make window cutouts 
+  
+  
+  let cutoutinfo= 
+   {from:[wellback,96,sillheight-2*TWOBY],
+   offset:[windowwidth,-FOURBY,windowheight+2*TWOBY+FOURBY],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,R2-24]}
+  }
+  
+  let cutout2 = arrtoitems(makespecs(cutoutinfo))
+  let cutout = union( cutout2[0], cutout2[1])
+  
+  // remove cutouts
+  for (let i = 0; i < items.length; i++) {
+   
+    items[i] = subtract(items[i],cutout)
+  }
+  // add headers
+  
+  let headerinfo= 
+  {from:[wellback+EPS,96,sillheight+windowheight],
+   offset:[hlen-EPS,-FOURBY,FOURBY-EPS],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,R2-hlen]}
+  }
+  
+  // add jacks
+  let jacklen = sillheight+windowheight-(R4+2*TWOBY)
+  let jackinfo= 
+  {from:[0,96,TWOBY+R4+TWOBY],
+   offset:[TWOBY-EPS,-FOURBY,jacklen-EPS],material:wood,
+   
+   copies:{dir:[1,0,0],
+   offsets:[wellback,wellback+hlen-TWOBY,
+   wellback+windowoffset,wellback+hlen-TWOBY+windowoffset]}
+  }
+  
+  let silltopinfo= 
+  {from:[wellback+TWOBY+EPS,96,sillheight],
+   offset:[hlen-2*TWOBY-EPS,-FOURBY,-TWOBY-EPS],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,windowoffset]}
+  }
+  
+  let sillbottominfo= 
+  {from:[wellback+TWOBY+EPS,96,sillheight-TWOBY],
+   offset:[hlen-2*TWOBY-EPS,-FOURBY,-TWOBY-EPS],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,windowoffset]}
+  }
+  
+  let studinfo = 
+  
+  {from:[0,96,TWOBY+R4+TWOBY],
+  
+   offset:[TWOBY-EPS,-FOURBY,R9-EPS],material:wood,
+   
+   copies:{dir:[1,0,0],
+   offsets:[wellback+windowwidth+TWOBY+TWOBY,
+  
+   wellback+windowoffset-TWOBY]}
+  }
+  
+  let specs = [].concat(
+  makespecs(headerinfo),
+  makespecs(jackinfo),
+  makespecs(silltopinfo),
+  makespecs(sillbottominfo),
+  makespecs(studinfo)
+  )
+  
+  //items = items.concat(arrtoitems(makespecs(headerinfo)))
+  windowitems = arrtoitems(specs)
+  
+  return items.concat(windowitems)
+
+}
+ 
 
 // Front Wall consts
 const F1 = 96
@@ -291,11 +553,7 @@ function frontwall() {
   let width=96
   let height=105.5
   
-  /*let F0info = 
-  {from:[A,0,TWOBY],
-   offset:[-FOURBY,TWOBY-EPS,B0-EPS],material:wood,
-   copies:{dir:[0,1,0],offsets:[0,16,31,52.5,94.5]}
-  }*/
+  
   // think from front of house, i.e. x=0
   // plates
   let F1info = 
@@ -421,14 +679,16 @@ const I4=31
 const I5=6.75 + TWOBY //????? wrong length on plans
 
 // x coord of interior wall??? 
-const R7 = 127.25
+//const R7 = 127.25
 
 function interiorwall() {
+
+  // TODO xpos hould be R7 + FOURBY
   let width=96
   let height=99.75
   // studs
   let I0info = 
-  {from:[R7,width-FOURBY,TWOBY],
+  {from:[R7+FOURBY,width-FOURBY,TWOBY],
    offset:[FOURBY,-TWOBY-EPS,I0-EPS],material:wood,
    copies:{dir:[0,-1,0],offsets:[0,32.5,43,43+TWOBY,60.5,71.5,
    71.5+16]}
@@ -436,35 +696,35 @@ function interiorwall() {
   console.log("I0info",I0info)
   // plates
   let I1info = 
-  {from:[R7,width-FOURBY,0],
+  {from:[R7+FOURBY,width-FOURBY,0],
    offset:[FOURBY,-(I1-EPS),TWOBY-EPS],material:wood,
    copies:{dir:[0,0,1],offsets:[0,I0+TWOBY,I0+3*TWOBY, I0+4*TWOBY]}
   
   }
   // extra long top plate
   let I2info = 
- {from:[R7,width,TWOBY+I0+TWOBY],
+ {from:[R7+FOURBY,width,TWOBY+I0+TWOBY],
    offset:[FOURBY,-(I2-EPS),TWOBY-EPS],material:wood,
   }
   
   
   // doorway trimmers
   let I3info = 
-  {from:[R7,width-FOURBY,TWOBY],
+  {from:[R7+FOURBY,width-FOURBY,TWOBY],
    offset:[FOURBY,-TWOBY-EPS,I3-EPS],material:wood,
    copies:{dir:[0,-1,0],offsets:[TWOBY,32.5-TWOBY]}
   }
   
   //header
   let I4info = 
-  {from:[R7,width-FOURBY-TWOBY,TWOBY+I3],
+  {from:[R7+FOURBY,width-FOURBY-TWOBY,TWOBY+I3],
    offset:[FOURBY,-(I4-EPS),FOURBY-EPS],material:wood
    
   }
   console.log("I4info",I4info)
   // shorts studs over header
   let I5info = 
-  {from:[R7,width-FOURBY,TWOBY+I3+FOURBY],
+  {from:[R7+FOURBY,width-FOURBY,TWOBY+I3+FOURBY],
    offset:[FOURBY,-TWOBY-EPS,I5-EPS],material:wood,
    copies:{dir:[0,-1,0],offsets:[TWOBY,16,32.5-TWOBY]}
   }
@@ -495,26 +755,26 @@ const B1=96
 const B2=89
 const B3=80.5
 const B4=37
-const B5=6.75
+const B5=6.75+TWOBY // wrong length on plans
 
 function backwall() {
   let width=96
   let height=98.25
-  
+  //studs
   let B0info = 
   {from:[A,0,TWOBY],
    offset:[-FOURBY,TWOBY-EPS,B0-EPS],material:wood,
    copies:{dir:[0,1,0],offsets:[0,16,31,52.5,94.5]}
   }
-  
+  //bottom plate and first top plate
   let B1info = 
   {from:[A,0,0],
    offset:[-FOURBY,B1,TWOBY-EPS],material:wood,
-   copies:{dir:[0,0,1],offsets:[0,B0]}
+   copies:{dir:[0,0,1],offsets:[0,B0+TWOBY]}
   }
-  
+  // top 2 plates
   let B2info = 
-  {from:[A,FOURBY,TWOBY+B0],
+  {from:[A,FOURBY,TWOBY+B0+TWOBY],
    offset:[-FOURBY,B2,TWOBY-EPS],material:wood,
    copies:{dir:[0,0,1],offsets:[0,TWOBY]}
   }
@@ -571,7 +831,9 @@ function backwall() {
 function wall() {
 
   return [].concat(backwall(),
-        interiorwall(),frontwall()
+        interiorwall(),frontwall(),
+        rightwall(),
+        leftwall()
     )
 }
 
@@ -613,7 +875,98 @@ function subfloor() {
   return [srr,srf,slr,slf]
 }
 
+const S1=157.5
+const S2 = 76.5
 function floorframing() {
+
+  let S1info =  {from:[0,0,0],
+   offset:[S1,TWOBY,SIXBY],
+   material:wood,
+   copies:{dir:[0,1,0],
+           offsets:[0,S2+TWOBY]}
+  }
+  
+  let S2info = {from:[S1,TWOBY,0],
+   offset:[-TWOBY,S2,SIXBY],material:wood,
+   copies:{dir:[-1,0,0],
+           offsets:[0, 16, 30.75, 32.25, 50, 66, 82, 98, 114, 130, 146,
+    156]}
+  }
+  
+  let specs = makespecs(S1info).concat(makespecs(S2info))
+  return arrtoitems(specs)
+  
+  // wood from list of coordinates 
+  //  {from:, to:, color:wood},
+  let arr = [{
+      from: [0, 0, 0],
+      to: [157.5, 1.5, 5.5],
+      color: wood
+    },
+    // 
+    {
+      from: [0, 78, 0],
+      to: [157.5, 79.5, 5.5],
+      color: wood
+    },
+
+    // floor joists
+    {
+      from: [0, 1.5, 0],
+      to: [1.5, 1.5 + 76.5, 5.5],
+      color: wood
+    },
+  ]
+
+  let j1 = {
+    from: [0, 1.5, 0],
+    to: [1.5, 1.5 + 76.5, 5.5],
+    color: wood
+  };
+  // from plans
+  let xshifts = [0, 16, 30.75, 32.25, 50, 66, 82, 98, 114, 130, 146,
+    156
+  ];
+
+  // insulation blocks most are 14.5 inches wide
+  let f1 = {
+    from: [0, 1.5, 0],
+    to: [14.5, 1.5 + 76.5, 5.5],
+    color: foam
+  };
+  let foamxshifts = [1.5, 51.5, 67.5, 83.5, 99.5, 115.5, 131.5]
+  // 3 special bays
+  // 17.5 to 30.75
+  let f2 = {
+    from: [17.5, 1.5, 0],
+    to: [30.75, 1.5 + 76.5, 5.5],
+    color: foam
+  };
+  // 33.75 to 50
+  let f3 = {
+    from: [33.75, 1.5, 0],
+    to: [50, 1.5 + 76.5, 5.5],
+    color: foam
+  };
+  // 147.5 to 156
+  let f4 = {
+    from: [147.5, 1.5, 0],
+    to: [156, 1.5 + 76.5, 5.5],
+    color: foam
+  };
+
+  // shift from and to .x by positions
+  arr = arr.concat(xinc(j1, xshifts));
+
+  arr = arr.concat(xinc(f1, foamxshifts));
+  arr = arr.concat([f2, f3, f4])
+  console.log ("floorframing", arr)
+  return arrtoitems(arr)
+}
+
+
+
+function floorframingOLD() {
   // wood from list of coordinates 
   //  {from:, to:, color:wood},
   let arr = [{
