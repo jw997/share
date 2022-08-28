@@ -178,7 +178,7 @@ function xinc(init, xs) {
 }
 // draw big visibile axes on picture
 function axes() {
-  let long = 168-39
+  let long = 24
   let short = 2
   let xa = colorize([100, 0, 0], cuboid({
     size: [long, short, short],
@@ -275,6 +275,99 @@ function makespecs( info ) {
 // copy(plate, [0,0,1], [93,94.5])
 
 // wall lengths
+
+// Roof consts
+const O1=189
+const O2=102
+const O3=22.5
+const O4=21.75
+const O5=87.75
+const O6=77.25
+
+function roof() {
+
+  // half inch left end rails
+  let drop = EIGHTBY-SIXBY-0.5
+  
+  // 5 lengthwise 
+  let O1info = 
+  {from:[TWOBY,0,drop],
+   offset:[O1-EPS,TWOBY,SIXBY-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[3,27,50.25,73.5,97.5]}
+  }
+  
+  let O2info = 
+  {from:[0,0,0],
+   offset:[TWOBY,O2-EPS,EIGHTBY-EPS],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,O1]}
+  }
+  
+  // blocks 
+  let O3info = 
+  {from:[O1,3+TWOBY,drop],
+   offset:[-TWOBY,O3-EPS,SIXBY-EPS],material:wood,
+   copies:{dir:[-1,0,0],offsets:[4.5,93.75,172.5]}
+  }
+  
+    // blocks 
+  let O3Leftinfo = 
+  {from:[O1,73.5+TWOBY,drop],
+   offset:[-TWOBY,O3-EPS,SIXBY-EPS],material:wood,
+   copies:{dir:[-1,0,0],offsets:[4.5,93.75,172.5]}
+  }
+  
+  
+
+  
+  
+  // blocks 
+  let O4info = 
+  {from:[O1,27+TWOBY,EIGHTBY-0.5-SIXBY],
+   offset:[-TWOBY,O4-EPS,SIXBY-EPS],material:wood,
+   copies:{dir:[-1,0,0],offsets:[4.5,93.75,
+   93.75+32.75+TWOBY,
+   172.5]}
+  }
+  
+  // flat O4 for light
+  let O4Flatinfo = 
+  
+  {from:[O1-(93.75-24),27+TWOBY,drop],
+   offset:[SIXBY,O4-EPS,TWOBY],material:wood,
+   }
+  
+  
+  // blocks 
+  let O4Leftinfo = 
+ {from:[O1,50.25+TWOBY,drop],
+   offset:[-TWOBY,O4-EPS,SIXBY-EPS],material:wood,
+   copies:{dir:[-1,0,0],offsets:[4.5,93.75,172.5]}
+  }
+  
+  
+  let specs = [].concat(
+
+  makespecs(O1info),
+  makespecs(O2info),
+  makespecs(O3info),makespecs(O3Leftinfo),
+  makespecs(O4info),makespecs(O4Leftinfo),
+  makespecs(O4Flatinfo)
+//  makespecs(O6info),
+
+  
+  )
+  let items = arrtoitems(specs)
+  
+  items = translateY(-3,items)
+  
+  let theta = Math.atan(EIGHTBY / 164.5)
+  items = translateX( -(O1-172.5),items)
+  items = rotateY(theta,items)
+  items = translateZ( 105.5-drop,items)
+
+  return items
+}
+
 
 // Right Wall consts
 const R0= 92.25
@@ -422,7 +515,8 @@ function rightwall() {
   raditem =  rotateZ(Math.PI,raditem)
   raditem = translateY(TWOBY,raditem)
   raditem = translateX(164.5/2+FOURBY, raditem)
-  raditem = translateZ(R0+3*TWOBY, raditem)
+  raditem = colorize(wood,
+  translateZ(R0+3*TWOBY, raditem))
   
   // copy 
   raditem2 = translateY(TWOBY,raditem)
@@ -430,7 +524,7 @@ function rightwall() {
   // tilt R8 and lift it up
   let r8item = arrtoitems(makespecs(R8info))
   r8item = rotateY(theta,r8item)
-  r8item = translateZ(R0+3*TWOBY+EIGHTBY, r8item)
+  r8item =  translateZ(R0+3*TWOBY+EIGHTBY, r8item)
   
   items.push(r8item)
  
@@ -468,12 +562,12 @@ function leftwall() {
   }
   
   let cutout2 = arrtoitems(makespecs(cutoutinfo))
-  let cutout = union( cutout2[0], cutout2[1])
+  let cutout =   union( cutout2[0], cutout2[1])
   
   // remove cutouts
   for (let i = 0; i < items.length; i++) {
-   
-    items[i] = subtract(items[i],cutout)
+    let oldcolor = items[i].color;
+    items[i] = colorize(oldcolor,subtract(items[i],cutout))
   }
   // add headers
   
@@ -1177,7 +1271,7 @@ function main() {
   //console.log("Studs",studs)
   
   
-  let mainitems = [].concat(items, studs, axes())
+  let mainitems = [].concat(items, studs, roof(), axes())
   console.log ("MAIN TOTAL ITEM COUNT", mainitems.length)
   
   return mainitems
