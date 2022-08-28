@@ -33,9 +33,12 @@ const {
 } = jscad.transforms
 
 // material colors
-let concrete = colorNameToRgb('lightblue')
+//let concrete = colorNameToRgb('lightblue')
+// used for filters, must all be different colors
 let wood = colorNameToRgb('yellow')
+wood = [1,1,0,1]
 let plywood = colorNameToRgb('brown')
+plywood = [0.6470588235294118,0.16470588235294117,0.16470588235294117,1]
 let rockbody = colorNameToRgb('darkgrey')
 let rockface = colorNameToRgb('lightgrey')
 let foam = colorNameToRgb('blue')
@@ -281,13 +284,63 @@ const O1=189
 const O2=102
 const O3=22.5
 const O4=21.75
+
+// drywall nailers
 const O5=87.75
 const O6=77.25
+
+const P1LEN=93
+const P2LEN=96
+
+// skylight rough opening
+const SLROW = 21.75
+const SLROL = 32.75
+
+
 
 function roof() {
 
   // half inch left end rails
   let drop = EIGHTBY-SIXBY-0.5
+  
+  // plywood
+  let plyheight = drop+SIXBY
+  
+  let p1info = 
+  {from:[TWOBY,3,plyheight],
+   offset:[P1LEN-EPS,48-EPS,0.5],material:plywood,
+   copies:{dir:[0,1,0],offsets:[0,48]}
+  }
+  
+  let p2info = 
+  {from:[O1+TWOBY,3,plyheight],
+   offset:[-(P2LEN-EPS),48-EPS,0.5],material:plywood,
+   copies:{dir:[0,1,0],offsets:[0,48]}
+  }
+  
+  
+  // hole corner is  
+  // [TWOBY+P1LEN-TWOBY/2,3+O3+2*TWOBY]
+  
+  // frame skylight box with 2x6
+  let slb1info = 
+   {from:[TWOBY+P1LEN-TWOBY/2,3+O3+2*TWOBY,plyheight+0.5],
+   offset:[TWOBY-EPS,SLROW+TWOBY-EPS,SIXBY],material:wood,
+   copies:{dir:[-(SLROL+TWOBY),-TWOBY,0],offsets:[0,1]}
+  }
+  
+  let slb2info = 
+   {from:[TWOBY+P1LEN-TWOBY/2+TWOBY,3+O3+2*TWOBY,plyheight+0.5],
+   offset:[-(SLROL+TWOBY-EPS),-(TWOBY-EPS),SIXBY],material:wood,
+   copies:{dir:[-TWOBY, SLROW+TWOBY ,0],offsets:[0,1]}
+  }
+  
+  let cutoutinfo = 
+  {from:[TWOBY+P1LEN-TWOBY/2,3+O3+2*TWOBY,0],
+   offset:[-SLROL,SLROW,12],material:plywood
+  }
+  
+  console.error("Cutoutinfo", cutoutinfo)
   
   // 5 lengthwise 
   let O1info = 
@@ -299,7 +352,7 @@ function roof() {
   let O2info = 
   {from:[0,0,0],
    offset:[TWOBY,O2-EPS,EIGHTBY-EPS],material:wood,
-   copies:{dir:[1,0,0],offsets:[0,O1]}
+   copies:{dir:[1,0,0],offsets:[0,O1+TWOBY]}
   }
   
   // blocks 
@@ -344,6 +397,18 @@ function roof() {
    copies:{dir:[-1,0,0],offsets:[4.5,93.75,172.5]}
   }
   
+   let O5info = 
+  {from:[O1-3-2*TWOBY,0,drop],
+   offset:[-O5,FOURBY-EPS,TWOBY-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[3+TWOBY,O2-3-TWOBY-FOURBY]}
+  }
+  
+    let O6info = 
+  {from:[O1-93.75-TWOBY,0,drop],
+   offset:[-O6,FOURBY-EPS,TWOBY-EPS],material:wood,
+   copies:{dir:[0,1,0],offsets:[3+TWOBY,O2-3-TWOBY-FOURBY]}
+  }
+  
   
   let specs = [].concat(
 
@@ -351,12 +416,33 @@ function roof() {
   makespecs(O2info),
   makespecs(O3info),makespecs(O3Leftinfo),
   makespecs(O4info),makespecs(O4Leftinfo),
-  makespecs(O4Flatinfo)
-//  makespecs(O6info),
+  makespecs(O4Flatinfo),
+  makespecs(O5info),
+  makespecs(O6info),
+  makespecs(slb1info),
+  makespecs(slb2info),
 
-  
   )
   let items = arrtoitems(specs)
+  
+  let plywoodspecs = [].concat(
+    makespecs(p1info),
+    makespecs(p2info)
+  )
+  
+  let plyitems = arrtoitems(plywoodspecs)
+  
+  // subtract skylight hole
+  let plycutout = arrtoitems(makespecs(cutoutinfo))[0]
+  
+  for (i=0;i<plyitems.length;i++) {
+    let oldcolor=plyitems[i].color
+    plyitems[i] = subtract(  plyitems[i], plycutout)
+    plyitems[i].color = oldcolor
+  }
+  
+  
+  items = items.concat(plyitems)// arrtoitems(plywoodspecs))
   
   items = translateY(-3,items)
   
@@ -364,6 +450,8 @@ function roof() {
   items = translateX( -(O1-172.5),items)
   items = rotateY(theta,items)
   items = translateZ( 105.5-drop,items)
+  
+ // items = translateY(150,items)
 
   return items
 }
@@ -1248,40 +1336,134 @@ function trailer() {
 // MAIN
 // ***********************************
 
-function main() {
+function main(params) {
+  // put one item in to avoid empty items edge cases
+  let items=[]
+  items.push( colorize([1,2,3],cuboid({size:[1,1,1]})) )
+   items.push( colorize([1,2,3],cuboid({size:[1,1,1]})) )
   
-  let items = trailer()
+  let traileritems = trailer()
+  if (params.trailer) {
+    items = items.concat(traileritems)
+  }
   // trailer leaves origin in inside bottom of back right corner
   
-  items = items.concat(floorframing())
+  let flooritems = floorframing()
+  if (params.floor) {
+    items = items.concat(flooritems)
+  }
+  //items = items.concat(floorframing())
   
   // move everything so origin is on top of trailer in 
   // back right corner
+  // console.warn("Concat 1",items.concat)
   items = translate( [(A-B)/2,
                       (boxOuterWidth-boxInnerWidth)/2,
                       -boxHeight] , items)
                      
-   
+  //console.warn("Concat 2",items.concat)
   // plywood subfloor
-  items = items.concat(subfloor())
+  //items = items.concat(subfloor())
+  if (params.floor)
+    items = items.concat(subfloor())
+    
   // move origin on top of subfloor
   items = translateZ( -3/4 , items)
   
-  studs=wall()
+ // studs=wall()
   //console.log("Studs",studs)
+  if (params.frontwall)
+    items=items.concat(frontwall())
+    
+  if (params.backwall)
+    items=items.concat(backwall())
+    
+   if (params.interiorwall)
+    items=items.concat(interiorwall())
+    
+   if (params.rightwall)
+    items=items.concat(rightwall())
+    
+   if (params.leftwall)
+    items=items.concat(leftwall())
+    
+   if (params.roof)
+    items=items.concat(roof())
+    
+  console.error("filtering")
+  console.log("wood is ",wood.toString())
+   console.log("plywood is ",plywood.toString())
+  // filter items by material
+  let filtered = []
+  for (i=0; i<items.length;i++) {
+    let item = items[i]
+    
+    if (item.color == undefined) {
+      console.error("undefined color", item)
+    }
+    console.log("color",item.color.toString())
+    switch (item.color.toString()) {
+      case wood.toString():
+        if (params.wood) {
+          filtered.push(item)
+        }
+        break;
+      case plywood.toString():
+        console.log("plywood item")
+        if (params.plywood) {
+          filtered.push(item)
+        } else {
+          console.log("plywood item skipped") 
+        }
+        break;
+          
+      default:
+        filtered.push(item)
+    }
+  }
   
-  
-  let mainitems = [].concat(items, studs, roof(), axes())
+  let mainitems = [].concat(filtered, /*studs, roof()*/ axes())
   console.log ("MAIN TOTAL ITEM COUNT", mainitems.length)
   
   return mainitems
+}
+
+// ************
+// menu
+// ***************
+const getParameterDefinitions = () => {
+  console.log("Called getParamDef")
+
+  return [
+  { name: 'Parts', type: 'group', caption: 'Parts' },
+  { name: 'trailer', type: 'checkbox', checked: true,  caption: 'trailer:' },
+ 
+  { name: 'floor',      type: 'checkbox', checked: true,  caption: 'floor:' },
+
+  //{ name: 'walls',      type: 'checkbox', checked: true,  caption: 'walls:' },
+   { name: 'frontwall',      type: 'checkbox', checked: true,  caption: 'frontwall:' },
+    { name: 'backwall',      type: 'checkbox', checked: true,  caption: 'backwall:' },
+     { name: 'interiorwall',      type: 'checkbox', checked: true,  caption: 'interiorwall:' },
+      { name: 'rightwall',      type: 'checkbox', checked: true,  caption: 'rightwall:' },
+    { name: 'leftwall',      type: 'checkbox', checked: true,  caption: 'leftwall:' },
+       
+  { name: 'roof',      type: 'checkbox', checked: true,  caption: 'roof:' },
+   
+  { name: 'group2', type: 'group', caption: 'Materials' },
+  { name: 'plywood', type: 'checkbox', checked: true,  caption: 'plywood:' },
+ 
+  { name: 'wood', type: 'checkbox', checked: true,  caption: 'wood:' },
+ // { name: 'insulation', type: 'checkbox', checked: true,  caption: 'insulation:' },
+   
+     
+     ]
 }
 
 // ***********************************
 // Exports
 // ***********************************
 module.exports = {
-  main
+  main,getParameterDefinitions
 }
 
 
