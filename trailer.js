@@ -84,6 +84,20 @@ function assert(condition, message) {
     }
 }
 
+// array subtract 
+// to do make sure each is an array of objects
+function arraysubtract(positive,negative ) {
+ let cutout = union(negative)
+ 
+ for (i=0;i<positive.length;i++) {
+    let oldcolor=positive[i].color
+    positive[i] = subtract(  positive[i], cutout)
+    positive[i].color = oldcolor
+  }
+  return positive
+}
+
+
 // elementwise diff of arrays to compute size for cuboid
 function diff(a1, a2) {
   
@@ -296,8 +310,6 @@ const P2LEN=96
 const SLROW = 21.75
 const SLROL = 32.75
 
-
-
 function roof() {
 
   // half inch left end rails
@@ -369,10 +381,6 @@ function roof() {
    copies:{dir:[-1,0,0],offsets:[4.5,93.75,172.5]}
   }
   
-  
-
-  
-  
   // blocks 
   let O4info = 
   {from:[O1,27+TWOBY,EIGHTBY-0.5-SIXBY],
@@ -388,7 +396,6 @@ function roof() {
   {from:[O1-(93.75-24),27+TWOBY,drop],
    offset:[SIXBY,O4-EPS,TWOBY],material:wood,
    }
-  
   
   // blocks 
   let O4Leftinfo = 
@@ -433,7 +440,7 @@ function roof() {
   let plyitems = arrtoitems(plywoodspecs)
   
   // subtract skylight hole
-  let plycutout = arrtoitems(makespecs(cutoutinfo))[0]
+   let plycutout = arrtoitems(makespecs(cutoutinfo))[0]
   
   for (i=0;i<plyitems.length;i++) {
     let oldcolor=plyitems[i].color
@@ -469,12 +476,36 @@ const R7 = 123.75 // TODO TOO LONG  127.25 by FOURBY
 const R8 = 168
 const R9 = 84.25
 
-
-
 function rightwall() {
 
   let width=14*12
   let height=105.5
+  
+  // sheathing
+  let PTH=5/8
+  let plyinfo = 
+  {from:[-PTH,-0.5,-2.5],
+   offset:[48.25-EPS,-PTH,9*12],material:plywood,
+   copies:{dir:[1,0,0],offsets:[0,48,96,144]}
+  }
+
+  // wheel well cutot
+  let cutoutinfo = 
+  {from:[36, -10,-2.5],
+   offset:[63,20,2.5+R4+TWOBY],material:plywood
+  }
+  
+  let topcutoutinfo = 
+  {from:[0, -10,0],
+   offset:[15*12,20,20],material:plywood
+  }
+  
+  let endcutoutinfo = 
+  {from:[14*12, -10,-2.5],
+   offset:[20*12,20,144],material:plywood
+  }
+  
+   
   
   let R0info = 
   {from:[FOURBY,0,TWOBY],
@@ -533,7 +564,6 @@ function rightwall() {
   
   }
   
-
   // header
   let R5info = 
   {from:[FOURBY,0, TWOBY+R0],
@@ -546,22 +576,18 @@ function rightwall() {
    offset:[R6-EPS,FOURBY,TWOBY-EPS],material:wood,
   
   }
-  
-  
+   
   let R7info = 
    {from:[FOURBY,0, TWOBY+R0+TWOBY],
    offset:[R7-EPS,FOURBY,TWOBY-EPS],material:wood,
   
   }
   
-  
-
   let R8info = 
   {from:[0,0,0],
    offset:[R8,FOURBY,TWOBY-EPS],material:wood
   }
-  
-  
+   
   let CCinfo = 
   {from:[FOURBY + 122.25 + TWOBY,FOURBY-TWOBY,TWOBY],
    offset:[FOURBY-EPS,TWOBY-EPS,R0],material:wood,
@@ -618,8 +644,41 @@ function rightwall() {
  
   items.push(raditem)
   items.push(raditem2)
+ /* sheathing */ 
+   let plywoodspecs = [].concat(
+    makespecs(plyinfo),
+  )
+  
+  let plyitems = arrtoitems(plywoodspecs)
+  
+  let cutoutspecs=
+    []
+    .concat(makespecs(cutoutinfo))
+    .concat(makespecs(endcutoutinfo))
+    
+  let topcutoutspec = [].concat(makespecs(topcutoutinfo))
+  let topcutout = arrtoitems(topcutoutspec)[0]
+   // rotate down 
+  
+  topcutout = rotateY( theta,topcutout)
+  topcutout = translateZ(R0+3*TWOBY+EIGHTBY+TWOBY, topcutout)
+  
+  // subtract hole
+  console.error("Cutoutspecs",cutoutspecs)
+  let plycutout = arrtoitems(cutoutspecs)
+  plycutout.push(topcutout)
+  
+ 
+  
+  console.error("Cutout",plycutout)
+  arraysubtract(plyitems,plycutout)
+ 
+  // push out items away from final spot in X dir
+ // items = translate([18,0,12],items)
+  
+  return items.concat(plyitems)
 
-  return items
+ // return items
 
 
 }
@@ -649,8 +708,19 @@ function leftwall() {
    copies:{dir:[1,0,0],offsets:[0,R2-24]}
   }
   
-  let cutout2 = arrtoitems(makespecs(cutoutinfo))
-  let cutout =   union( cutout2[0], cutout2[1])
+  // make a second smaller cutout for sheathing
+  let plycutoutinfo= 
+   {from:[wellback+TWOBY,96,sillheight],
+   offset:[windowwidth,10,windowheight],material:wood,
+   copies:{dir:[1,0,0],offsets:[0,R2-24-FOURBY]}
+  }
+  
+  let cutout2 = arrtoitems(
+             [].concat(makespecs(cutoutinfo)).
+             concat(makespecs(plycutoutinfo)))
+             
+  //let cutout =   union( cutout2[0], cutout2[1])
+  let cutout = union(cutout2)
   
   // remove cutouts
   for (let i = 0; i < items.length; i++) {
@@ -735,6 +805,25 @@ function frontwall() {
   let width=96
   let height=105.5
   
+  // sheathing
+  let PTH=5/8
+  let plyinfo = 
+  {from:[-PTH,-0.5,height-(9*12)],
+   offset:[PTH,48.25-EPS,9*12],material:plywood,
+   copies:{dir:[0,1,0],offsets:[0,48]}
+  }
+
+ let windowcutoutinfo = 
+  {from:[-1, 12,42],
+   offset:[10,24,36],material:plywood
+  }
+  
+   let doorcutoutinfo = 
+  {from:[-1, 48,  0],
+   offset:[10, 38 ,82],material:plywood
+  }
+
+  
   
   // think from front of house, i.e. x=0
   // plates
@@ -813,19 +902,14 @@ function frontwall() {
    {from:[0,width-(57+2*TWOBY),TWOBY+F8],
    offset:[FOURBY,-(F9-EPS),TWOBY-EPS],material:wood,
     copies:{dir:[0,0,1],
-           offsets:[0,TWOBY]}
-   
+           offsets:[0,TWOBY]}   
   }
-  
-  
   
   let CCinfo = 
   {from:[FOURBY-TWOBY,0,TWOBY],
    offset:[TWOBY,FOURBY-EPS,F3],material:wood,
    copies:{dir:[0,1,0],offsets:[TWOBY+EPS,width-TWOBY-FOURBY]}
   }
-  
- 
   
   let specs = [].concat(
 
@@ -842,13 +926,30 @@ function frontwall() {
   makespecs(F11info),
   makespecs(CCinfo),
   
+  
   )
   let items = arrtoitems(specs)
+  
+  let plywoodspecs = [].concat(
+    makespecs(plyinfo),
+  )
+  
+  let plyitems = arrtoitems(plywoodspecs)
+  
+  let cutoutspecs=
+    [].concat(makespecs(windowcutoutinfo),
+    makespecs(doorcutoutinfo))
+  
+  // subtract hole
+  console.error("Cutoutspecs",cutoutspecs)
+  let plycutout = arrtoitems(cutoutspecs)
+  
+  arraysubtract(plyitems,plycutout)
   
   // push out items away from final spot in X dir
  // items = translate([18,0,12],items)
   
-  return items
+  return items.concat(plyitems)
   
 }
   
@@ -942,6 +1043,24 @@ const B5=6.75+TWOBY // wrong length on plans
 function backwall() {
   let width=96
   let height=98.25
+  
+  
+   // sheathing
+  let PTH=5/8
+  let plyinfo = 
+  {from:[14*12,-0.5,-2.5],
+   offset:[PTH,48.25-EPS,100.75],material:plywood,
+   copies:{dir:[0,1,0],offsets:[0,48]}
+  }
+
+
+  
+   let doorcutoutinfo = 
+  {from:[14*12-1, 55.5,  0],
+   offset:[10, 34 ,82],material:plywood
+  }
+
+
   //studs
   let B0info = 
   {from:[A,0,TWOBY],
@@ -1003,10 +1122,30 @@ function backwall() {
   )
   let items = arrtoitems(specs)
   
+    let plywoodspecs = [].concat(
+    makespecs(plyinfo),
+  )
+  
+  let plyitems = arrtoitems(plywoodspecs)
+  
+  let cutoutspecs=
+    [].concat(makespecs(doorcutoutinfo))
+  
+  // subtract hole
+  console.error("Cutoutspecs",cutoutspecs)
+  let plycutout = arrtoitems(cutoutspecs)
+  
+  arraysubtract(plyitems,plycutout)
+  
   // push out items away from final spot in X dir
  // items = translate([18,0,12],items)
   
-  return items
+  return items.concat(plyitems)
+  
+  // push out items away from final spot in X dir
+ // items = translate([18,0,12],items)
+  
+  //return items
   
 }
 
@@ -1399,7 +1538,7 @@ function main(params) {
     let item = items[i]
     
     if (item.color == undefined) {
-      console.error("undefined color", item)
+      console.error("item has undefined color", item.color, item)
     }
     console.log("color",item.color.toString())
     switch (item.color.toString()) {
