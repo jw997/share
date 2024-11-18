@@ -1,0 +1,29 @@
+Contrabee Hint - Nov 18 2024
+
+Hexgrams:  3  Perfect:  2
+Queen Bee points:  332
+total words:  78
+     4   5   6   7   8
+D    8   4   6   0   2
+E    1   2   1   0   0
+I    0   2   3   0   0
+N    8   0   3   1   0
+O    1   3   3   1   0
+P   12   3  12   0   2
+DE = 8
+DI = 6
+DO = 6
+ED = 1
+EN = 1
+EP = 2
+IN = 3
+IO = 2
+NE = 4
+NI = 3
+NO = 5
+OD = 1
+ON = 1
+OP = 6
+PE = 10
+PI = 11
+PO = 8
