@@ -1,25 +1,23 @@
-Contrabee Hint - Nov 19 2024
+Contrabee Hint - Nov 20 2024
 
 Hexgrams:  0  Perfect:  0
-Queen Bee points:  99
-total words:  32
-     4   5   6   7
-A    2   4   1   0
-E    3   0   1   0
-I    1   0   0   0
-L    5   3   1   1
-V    5   2   2   0
-Y    1   0   0   0
-AL = 6
-AV = 1
-EA = 1
-EE = 1
-EV = 2
-IL = 1
-LA = 2
-LE = 5
-LI = 3
-VA = 3
-VE = 2
-VI = 4
-YE = 1
+Queen Bee points:  65
+total words:  28
+     4   5   6
+A    3   0   1
+C    7   5   0
+I    1   0   0
+K    2   0   0
+M    6   3   0
+AC = 2
+AM = 2
+CA = 3
+CI = 1
+CO = 8
+IM = 1
+KI = 1
+KO = 1
+MA = 5
+MI = 2
+MO = 2
+
