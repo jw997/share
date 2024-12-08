@@ -1,83 +1,66 @@
-Contrabee Hint - Dec 7 2024
+Contrabee Hint - Dec 8 2024
 Hexgrams:  0  Perfect:  0
-Queen Bee points:  174
-total words:  50
-     4   5   6   7
-A    3   3   0   0
-D    8   1   6   2
-E    1   3   2   1
-I    2   1   0   0
-M    8   5   2   0
-V    1   1   0   0
-AD = 1
-AI = 3
-AM = 1
-AV = 1
-DA = 2
-DE = 5
-DI = 10
-EA = 2
-ED = 3
-EV = 2
-ID = 1
-IM = 1
-IV = 1
-MA = 8
-ME = 4
-MI = 3
-VI = 2
+Queen Bee points:  151
+total words:  40
+     4   5   6   7   8
+A    2   1   2   1   1
+E    1   1   2   1   0
+I    0   2   2   0   1
+N    7   0   2   0   1
+T    8   3   2   0   0
+AN = 5
+AT = 2
+EA = 1
+EN = 1
+EX = 3
+IN = 5
+NA = 3
+NE = 4
+NI = 3
+TA = 4
+TE = 6
+TI = 3
 Word length hints
-AD(5)
-AI(4)
-AI(5)
-AI(5)
-AM(4)
-AV(4)
-DA(4)
-DA(6)
-DE(4)
-DE(4)
-DE(6)
-DE(4)
-DE(6)
-DI(6)
-DI(4)
-DI(4)
-DI(6)
-DI(4)
-DI(4)
-DI(5)
-DI(6)
-DI(7)
-DI(7)
-EA(4)
+AN(5)
+AN(4)
+AN(7)
+AN(8)
+AN(4)
+AT(6)
+AT(6)
 EA(5)
-ED(7)
-ED(6)
-ED(5)
-EV(5)
-EV(6)
-ID(4)
-IM(4)
-IV(5)
-MA(5)
-MA(6)
-MA(4)
-MA(4)
-MA(4)
-MA(6)
-MA(4)
-MA(5)
-ME(4)
-ME(5)
-ME(4)
-ME(5)
-MI(4)
-MI(4)
-MI(5)
-VI(4)
-VI(5)
-
+EN(7)
+EX(4)
+EX(6)
+EX(6)
+IN(5)
+IN(8)
+IN(6)
+IN(5)
+IN(6)
+NA(4)
+NA(4)
+NA(6)
+NE(4)
+NE(6)
+NE(4)
+NE(4)
+NI(4)
+NI(8)
+NI(4)
+TA(5)
+TA(6)
+TA(4)
+TA(4)
+TE(4)
+TE(4)
+TE(6)
+TE(5)
+TE(4)
+TE(4)
+TI(4)
+TI(4)
+TI(5)
 
 
 
